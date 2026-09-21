@@ -1,0 +1,1047 @@
+{
+  "name": "m4_p1_v1",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        1888,
+        4464
+      ],
+      "id": "5aa4cf21-e665-4e43-8457-fb43c036d17e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "http://inbox:8000/emails",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2112,
+        4464
+      ],
+      "id": "f663fe99-52b7-4d8f-99a4-63513e2d0f9a",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all().map(item => {\n  return {\n    json: {\n      email_id: item.json.email_id\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2336,
+        4368
+      ],
+      "id": "5223419a-9177-44c1-8fd7-6c2932bb0d2d",
+      "name": "Test Output"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        2768,
+        4944
+      ],
+      "id": "0f058378-62e1-4be3-b977-db36da5fa19a",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1rKaGZ9E5DTOnhHU",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "17465748-45b1-4c2b-b29e-5a7f65c78b3b",
+              "leftValue": "={{ $json.category }}",
+              "rightValue": "BL_COMPARISON",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3344,
+        4544
+      ],
+      "id": "fcd613b6-afac-44b8-9774-5596b3027fdb",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "maxItems": 10
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        2336,
+        4560
+      ],
+      "id": "ceae888b-6a06-4621-80a4-934f2f8e5fc6",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"category\": \"BL_COMPARISON\",\n  \"confidence\": 0.95,\n  \"claim_attachment\": true\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2928,
+        4816
+      ],
+      "id": "976f690e-fefa-406b-8398-5aaf84981fb7",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Email ID: {{ $json.email_id }}\n\nEmail Subject:\n{{ $json.subject }}\n\nEmail Body:\n{{ $json.body }}\n\nAttachments:\n{{ JSON.stringify($json.attachments) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an AI assistant for a shipping document verification system. Classify the given email into exactly ONE of the following 5 categories:\n\n1. BL_COMPARISON: Emails that contain or request Bill of Lading (BL) and shipping comparisons, usually involving attachments.\n2. SI_REQUEST: Shipping Instruction requests or submissions.\n3. INVOICE_QUERY: Inquiries related to billing, invoices, or payments.\n4. GENERAL: General shipping inquiries or standard communications.\n5. SPAM: Irrelevant emails, advertisements, or spam mimicking shipping language.\n\nAlso determine claim_attachment:\n- true if the email claims, implies, or requests that shipping document attachment(s) should be present/reviewed.\n- false otherwise.\n\nOutput strictly according to the structured format with category, confidence, and claim_attachment.\nNever invent attachment presence."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2784,
+        4560
+      ],
+      "id": "539cdf61-d14e-4cb1-b5bc-846b9eb138ed",
+      "name": "AI Agent （Category Distribution）",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "attachments",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        3808,
+        4384
+      ],
+      "id": "b4a9b396-f385-4584-99e2-9f2b6e196d18",
+      "name": "Split Out1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Document type: {{ $json.document_type }}\n\nDocument:\n{{ $json.document_text }}\n\nExtract the following shipping fields from this document:\n\n- shipper\n- consignee\n- notify_party\n- port_of_loading\n- port_of_discharge\n- container_count\n- gross_weight_kg\n\nReturn only structured data according to the required output format.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a shipping document information extraction system.\n\nYour only task is to extract factual information from Shipping Instructions (SI) and Bills of Lading (BL).\n\nExtract exactly these 7 fields:\n\n1. shipper\n2. consignee\n3. notify_party\n4. port_of_loading\n5. port_of_discharge\n6. container_count\n7. gross_weight_kg\n\nRules:\n\n- Never invent information.\n- If a value is genuinely absent or unreadable, return null.\n- Ignore addresses underneath shipper, consignee, and notify party unless they are part of the entity name.\n- Preserve company names accurately.\n- For ports, preserve the port information present in the document. If a UN/LOCODE is explicitly present, include it.\n- container_count must be an integer.\n- \"1 x 40'HC\" means container_count = 1.\n- \"2 x 20GP\" means container_count = 2.\n- gross_weight_kg must be a number in kilograms without commas or unit text.\n- \"21,577 KG\" means gross_weight_kg = 21577.\n- \"22 MT\" means gross_weight_kg = 22000.\n- Do not decide whether SI and BL match. Only extract information."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        4480,
+        4384
+      ],
+      "id": "7257efa0-a46e-47f3-a162-fd7765ade1cd",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1098dd76-6f87-4a92-b490-13c7148f94fe",
+              "leftValue": "={{ $json.attachments }}",
+              "rightValue": 2,
+              "operator": {
+                "type": "array",
+                "operation": "lengthGte",
+                "rightType": "number"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3584,
+        4480
+      ],
+      "id": "202d9dbf-8fdd-4e95-9ca5-c6a19138ada4",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "content": "## I'm a note \ncategory\n\n这里需要confidence吗？\n",
+        "width": 244
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2768,
+        4400
+      ],
+      "typeVersion": 1,
+      "id": "e2b95d20-ab15-4c79-bd16-e8221940db09",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## I'm a note \nnum of attachment >=2\n\nfalse:\nNEEDS_REVIEW missing_attachment "
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3456,
+        4224
+      ],
+      "typeVersion": 1,
+      "id": "67e40e22-c00b-4743-8c96-e86f291f77d4",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "7 fields "
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        4448,
+        4224
+      ],
+      "typeVersion": 1,
+      "id": "fd757ad9-00c2-436b-a360-3f12ddd26c2a",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        4464,
+        4640
+      ],
+      "id": "d4767ba1-0e06-4705-a6d3-6e9016ece3bd",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1rKaGZ9E5DTOnhHU",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  const path = item.json.attachments;\n\n  let type = \"UNKNOWN\";\n\n  if (path.toLowerCase().includes(\"_si.\")) {\n    type = \"SI\";\n  } else if (path.toLowerCase().includes(\"_bl.\")) {\n    type = \"BL\";\n  }\n\n  return {\n    json: {\n      email_id: item.json.email_id,\n      attachment_path: path,\n      document_type: type\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3968,
+        4384
+      ],
+      "id": "fb8db3f1-6e30-4919-bdf6-5dadfc90ceda",
+      "name": "Identify Attachment"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'http://inbox:8000/' + $json.attachment_path }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        4128,
+        4272
+      ],
+      "id": "400373ba-7fd1-4392-a175-ad6daf3f2367",
+      "name": "Get Attachment"
+    },
+    {
+      "parameters": {
+        "jsCode": "const docs = $input.all();\nconst identified = $('Identify Attachment').all();\n\nreturn docs.map((doc, index) => {\n  return {\n    json: {\n      email_id: identified[index].json.email_id,\n      document_type: identified[index].json.document_type,\n      attachment_path: identified[index].json.attachment_path,\n      document_text: doc.json.data\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4272,
+        4176
+      ],
+      "id": "74392bae-3dad-47a3-8c39-358cc8ae830c",
+      "name": "Prepare Document"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"shipper\": \"APRIL FAR EAST (M) SDN BHD\",\n  \"consignee\": \"MOORIM SP CO., LTD\",\n  \"notify_party\": \"UAB NOVAKOPA\",\n  \"port_of_loading\": \"PORT KLANG (WESTPORT), MALAYSIA (MYPKG)\",\n  \"port_of_discharge\": \"CALLAO, PERU (PECLL)\",\n  \"container_count\": 1,\n  \"gross_weight_kg\": 21577\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        4640,
+        4592
+      ],
+      "id": "77608279-a3b6-4dcb-8eb3-e0408eb3a565",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const extracted = $input.all();\nconst sourceDocs = $('Prepare Document').all();\n\n// Group documents by email_id\nconst grouped = {};\n\nfor (let i = 0; i < extracted.length; i++) {\n  const source = sourceDocs[i]?.json;\n\n  if (!source) continue;\n\n  const emailId = source.email_id;\n  const type = source.document_type;\n  const data = extracted[i].json.output ?? extracted[i].json;\n\n  if (!grouped[emailId]) {\n    grouped[emailId] = {};\n  }\n\n  grouped[emailId][type] = data;\n}\n\n// Fields that must be compared\nconst fields = [\n  \"shipper\",\n  \"consignee\",\n  \"notify_party\",\n  \"port_of_loading\",\n  \"port_of_discharge\",\n  \"container_count\",\n  \"gross_weight_kg\"\n];\n\nfunction normalizeText(value) {\n  if (value === null || value === undefined) {\n    return \"\";\n  }\n\n  return String(value)\n    .trim()\n    .toUpperCase()\n    .replace(/\\s+/g, \" \")\n    .replace(/[.,]/g, \"\");\n}\n\n// Produce ONE result per email\nconst results = [];\n\nfor (const [emailId, docs] of Object.entries(grouped)) {\n\n  const si = docs.SI;\n  const bl = docs.BL;\n\n  // Missing SI or BL\n  if (!si || !bl) {\n    results.push({\n      json: {\n        email_id: emailId,\n        status: \"NEEDS_REVIEW\",\n        review_reason: \"missing_attachment\",\n        has_defect: false,\n        defect_fields: []\n      }\n    });\n\n    continue;\n  }\n\n  const defectFields = [];\n\n  for (const field of fields) {\n\n    const siValue = si[field];\n    const blValue = bl[field];\n\n    if (\n      field === \"container_count\" ||\n      field === \"gross_weight_kg\"\n    ) {\n      if (Number(siValue) !== Number(blValue)) {\n        defectFields.push(field);\n      }\n    } else {\n      if (normalizeText(siValue) !== normalizeText(blValue)) {\n        defectFields.push(field);\n      }\n    }\n  }\n\n  const hasDefect = defectFields.length > 0;\n\n  results.push({\n    json: {\n      email_id: emailId,\n      status: hasDefect ? \"MISMATCH\" : \"OK\",\n      review_reason: null,\n      has_defect: hasDefect,\n      defect_fields: defectFields,\n\n      // Keep temporarily for debugging\n      si_extracted: si,\n      bl_extracted: bl\n    }\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4896,
+        4416
+      ],
+      "id": "bcd36a5b-f0c9-4a51-ad7b-8b56bc1652da",
+      "name": "SI vs BL",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  return {\n    json: {\n      email_id: item.json.email_id,\n      category: \"BL_COMPARISON\",\n      status: item.json.status,\n      review_reason: item.json.review_reason ?? null,\n      has_defect: item.json.has_defect ?? false,\n      defect_fields: item.json.defect_fields ?? []\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5280,
+        4480
+      ],
+      "id": "4078fdac-e783-4bc6-996b-8b35994937b4",
+      "name": "Serialize BL Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    email_id: $json.email_id,\n    category: $json.category,\n    status: \"OK\",\n    review_reason: null,\n    has_defect: false,\n    defect_fields: []\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3312,
+        4784
+      ],
+      "id": "a7154e0e-ee7c-4de1-906a-a8b13a99c903",
+      "name": "Non-BL",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    email_id: $json.email_id,\n    category: \"BL_COMPARISON\",\n    status: \"NEEDS_REVIEW\",\n    review_reason: \"missing_attachment\",\n    has_defect: false,\n    defect_fields: []\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3808,
+        4640
+      ],
+      "id": "94ed385d-cbec-4268-aeab-ab5493d824c9",
+      "name": "missing attachment"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    email_id: $json.email_id,\n    subject: $json.subject,\n    body: $json.body,\n    attachments: $json.attachments ?? []\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2560,
+        4560
+      ],
+      "id": "e967a359-2c8f-4e09-bf6d-a970d365e8dd",
+      "name": "Prepare Email"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const email = $('Prepare Email').item.json;\nconst ai = $json.output;\n\nreturn {\n  json: {\n    email_id: email.email_id,\n    subject: email.subject,\n    body: email.body,\n    attachments: email.attachments ?? [],\n    category: ai.category,\n    confidence: ai.confidence,\n    claim_attachment: ai.claim_attachment ?? false\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3072,
+        4272
+      ],
+      "id": "bd4136e7-3d13-40be-81ef-9826be7074d6",
+      "name": "Prepare Classified Email"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3238e189-5a96-41f5-ab10-3cb6028c2e77",
+              "leftValue": "={{ $json.document_text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4480,
+        4160
+      ],
+      "id": "074671d2-4f50-445e-9771-8c277a97ac58",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        5568,
+        4688
+      ],
+      "id": "0be6c5a4-b8db-492f-b615-649b73674de5",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst submission = {};\nconst errors = [];\n\nfor (const item of items) {\n  const data = item.json;\n\n  const emailId = data.email_id;\n\n  // Check email_id\n  if (!emailId) {\n    errors.push({\n      reason: \"Missing email_id\",\n      data: data\n    });\n    continue;\n  }\n\n  // Prevent duplicate email_id\n  if (submission[emailId]) {\n    errors.push({\n      reason: \"Duplicate email_id\",\n      email_id: emailId\n    });\n    continue;\n  }\n\n  submission[emailId] = {\n    category: data.category ?? null,\n    status: data.status ?? \"OK\",\n    review_reason: data.review_reason ?? null,\n    has_defect: data.has_defect ?? false,\n    defect_fields: data.defect_fields ?? []\n  };\n}\n\n// Number of unique emails\nconst actualCount = Object.keys(submission).length;\n\n// Expected number of emails\nconst expectedCount = 520;\n\nreturn [\n  {\n    json: {\n      submission: submission,\n\n      validation: {\n        expected_count: expectedCount,\n        actual_count: actualCount,\n        count_match: actualCount === expectedCount,\n        missing_count: Math.max(expectedCount - actualCount, 0),\n        error_count: errors.length,\n        errors: errors\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5824,
+        4688
+      ],
+      "id": "642fbd68-edba-475c-8552-0eb1c3cbc0df",
+      "name": "Build Submission"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "claim-attachment-v2",
+              "leftValue": "={{ $json.claim_attachment }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "one-attachment-v2",
+              "leftValue": "={{ $json.attachments }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "array",
+                "operation": "lengthEquals",
+                "rightType": "number"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3584,
+        4704
+      ],
+      "id": "be7602fc-5dd8-40d8-809c-0fc5575ed318",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    email_id: $json.email_id ?? null,\n    category: $json.category ?? null,\n    status: \"NEEDS_REVIEW\",\n    review_reason: \"AI_PROCESSING_ERROR\",\n    has_defect: false,\n    defect_fields: []\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3344,
+        4944
+      ],
+      "id": "0a4d6031-3f0e-4d23-8894-bdcd1aa5a050",
+      "name": "AI_PROCESSING_ERROR"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const sourceDocs = $('Prepare Document').all();\nconst currentIndex = $itemIndex;\n\nconst source = sourceDocs[currentIndex]?.json ?? {};\n\nreturn {\n  json: {\n    email_id: $json.email_id ?? source.email_id ?? null,\n    category: \"BL_COMPARISON\",\n    status: \"NEEDS_REVIEW\",\n    review_reason: \"UNDEFINED_FIELD\",\n    has_defect: false,\n    defect_fields: []\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4944,
+        4592
+      ],
+      "id": "32b772de-133b-46c7-b719-eb0ecd427143",
+      "name": "Extraction Error"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  json: {\n    email_id: $json.email_id,\n    category: $json.category,\n    status: \"OK\",\n    review_reason: null,\n    has_defect: false,\n    defect_fields: []\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3840,
+        4864
+      ],
+      "id": "57336387-98e1-40cb-b144-921318f2c726",
+      "name": "Non-BL or BL request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// ==========================================\n// PORT ALIAS DATABASE\n// ==========================================\n// Tier 2: known port names / aliases → UN/LOCODE\nconst PORT_ALIASES = {\n  // Malaysia\n  \"PORT KLANG\": \"MYPKG\",\n  \"PORT KLANG WESTPORT\": \"MYPKG\",\n  \"PORT KLANG MALAYSIA\": \"MYPKG\",\n  \"KLANG\": \"MYPKG\",\n\n  // China\n  \"NANTONG\": \"CNNTG\",\n  \"NANTONG CHINA\": \"CNNTG\",\n\n  // Pakistan\n  \"KARACHI\": \"PKKHI\",\n  \"KARACHI PAKISTAN\": \"PKKHI\",\n\n  // Peru\n  \"CALLAO\": \"PECLL\",\n  \"CALLAO PERU\": \"PECLL\"\n};\n\n\n// ==========================================\n// BASIC TEXT NORMALIZATION\n// ==========================================\nfunction cleanPort(value) {\n  if (value === null || value === undefined) {\n    return \"\";\n  }\n\n  return String(value)\n    .toUpperCase()\n    .trim()\n    .replace(/[(),.]/g, \" \")\n    .replace(/\\s+/g, \" \")\n    .trim();\n}\n\n\n// ==========================================\n// TIER 1 — EXPLICIT UN/LOCODE\n// ==========================================\nfunction extractLocode(value) {\n  if (!value) {\n    return null;\n  }\n\n  const text = String(value).toUpperCase();\n\n  /*\n    Only trust a UN/LOCODE when explicitly written\n    inside parentheses.\n\n    Examples:\n      PORT KLANG (MYPKG) → MYPKG\n      NANTONG (CNNTG)     → CNNTG\n\n    This prevents normal five-letter words such as\n    KLANG and CHINA from being mistaken for LOCODEs.\n  */\n\n  const match = text.match(/\\(([A-Z]{2}[A-Z0-9]{3})\\)/);\n\n  if (!match) {\n    return null;\n  }\n\n  return match[1];\n}\n\n\n// ==========================================\n// RESOLVE ONE PORT\n// ==========================================\nfunction resolvePort(value) {\n\n  // Missing value\n  if (\n    value === null ||\n    value === undefined ||\n    String(value).trim() === \"\"\n  ) {\n    return {\n      original: value,\n      normalized: null,\n      method: \"missing\",\n      confidence: 0\n    };\n  }\n\n\n  // ----------------------------------------\n  // TIER 1: Explicit UN/LOCODE\n  // ----------------------------------------\n  const locode = extractLocode(value);\n\n  if (locode) {\n    return {\n      original: value,\n      normalized: locode,\n      method: \"locode\",\n      confidence: 1.0\n    };\n  }\n\n\n  // Clean text before alias matching\n  const cleaned = cleanPort(value);\n\n\n  // ----------------------------------------\n  // TIER 2: Known aliases\n  // ----------------------------------------\n  if (PORT_ALIASES[cleaned]) {\n    return {\n      original: value,\n      normalized: PORT_ALIASES[cleaned],\n      method: \"alias\",\n      confidence: 0.95\n    };\n  }\n\n\n  // ----------------------------------------\n  // TIER 3: Conservative normalization\n  // ----------------------------------------\n  /*\n    IMPORTANT:\n    We do NOT guess unknown ports yet.\n\n    Example:\n      \"PORT ABC.\"\n      becomes\n      \"PORT ABC\"\n\n    But we do not automatically decide that it is\n    equivalent to another port.\n\n    This reduces false positive matches.\n  */\n\n  return {\n    original: value,\n    normalized: cleaned,\n    method: \"normalized_text\",\n    confidence: 0.70\n  };\n}\n\n\n// ==========================================\n// PROCESS ALL DOCUMENTS\n// ==========================================\nreturn items.map(item => {\n\n  // Supports both:\n  // { output: {...} }\n  // and normal {...} objects\n  const data = item.json.output ?? item.json;\n\n  const loading =\n    resolvePort(data.port_of_loading);\n\n  const discharge =\n    resolvePort(data.port_of_discharge);\n\n\n  return {\n    json: {\n\n      // Keep original data\n      ...item.json,\n\n      // Detailed debugging information\n      port_resolution: {\n\n        port_of_loading: loading,\n\n        port_of_discharge: discharge\n      },\n\n      // Values that M4 comparison will eventually use\n      normalized_port_of_loading:\n        loading.normalized,\n\n      normalized_port_of_discharge:\n        discharge.normalized\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2608,
+        5312
+      ],
+      "id": "6eae2dd5-bcf5-4074-b5ee-4f5d66740b75",
+      "name": "Port Resolver"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      test_name: \"Spacing and punctuation\",\n      port_of_loading: \"  Port   Klang, Malaysia. \",\n      port_of_discharge: \"Karachi, Pakistan.\"\n    }\n  },\n  {\n    json: {\n      test_name: \"Unknown same port formatting\",\n      port_of_loading: \"Port Example.\",\n      port_of_discharge: \"PORT EXAMPLE\"\n    }\n  },\n  {\n    json: {\n      test_name: \"Different unknown ports\",\n      port_of_loading: \"Port Alpha\",\n      port_of_discharge: \"Port Beta\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        5344
+      ],
+      "id": "821c95b0-d061-48e4-8566-74a51866709f",
+      "name": "Test Port Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n\n// ==========================================\n// WEIGHT NORMALIZATION\n// ==========================================\nfunction normalizeWeight(value) {\n\n  if (\n    value === null ||\n    value === undefined ||\n    String(value).trim() === \"\"\n  ) {\n    return {\n      original: value,\n      normalized_kg: null,\n      method: \"missing\",\n      confidence: 0\n    };\n  }\n\n  // Already a number:\n  // assume M3 already converted it to kilograms\n  if (typeof value === \"number\") {\n    return {\n      original: value,\n      normalized_kg: value,\n      method: \"already_numeric_kg\",\n      confidence: 1.0\n    };\n  }\n\n  let text = String(value)\n    .toUpperCase()\n    .trim()\n    .replace(/,/g, \"\");\n\n  // Extract first numeric value\n  const numberMatch = text.match(/-?\\d+(?:\\.\\d+)?/);\n\n  if (!numberMatch) {\n    return {\n      original: value,\n      normalized_kg: null,\n      method: \"unresolved\",\n      confidence: 0\n    };\n  }\n\n  const amount = Number(numberMatch[0]);\n\n  if (!Number.isFinite(amount) || amount < 0) {\n    return {\n      original: value,\n      normalized_kg: null,\n      method: \"unresolved\",\n      confidence: 0\n    };\n  }\n\n\n  // ----------------------------------------\n  // KG\n  // ----------------------------------------\n  if (\n    /\\bKG\\b/.test(text) ||\n    /\\bKGS\\b/.test(text) ||\n    /\\bKILOGRAMS?\\b/.test(text)\n  ) {\n    return {\n      original: value,\n      normalized_kg: amount,\n      method: \"kg\",\n      confidence: 1.0\n    };\n  }\n\n\n  // ----------------------------------------\n  // METRIC TON / MT\n  // ----------------------------------------\n  if (\n    /\\bMT\\b/.test(text) ||\n    /\\bMETRIC\\s+TONS?\\b/.test(text) ||\n    /\\bTONNES?\\b/.test(text)\n  ) {\n    return {\n      original: value,\n      normalized_kg: amount * 1000,\n      method: \"metric_ton\",\n      confidence: 1.0\n    };\n  }\n\n\n  // ----------------------------------------\n  // LB / LBS / POUNDS\n  // ----------------------------------------\n  if (\n    /\\bLBS?\\b/.test(text) ||\n    /\\bPOUNDS?\\b/.test(text)\n  ) {\n    const kg = amount * 0.453592;\n\n    return {\n      original: value,\n\n      // Round to 3 decimal places\n      normalized_kg:\n        Math.round(kg * 1000) / 1000,\n\n      method: \"lbs\",\n      confidence: 1.0\n    };\n  }\n\n\n  // Unit is unknown.\n  // Don't guess.\n  return {\n    original: value,\n    normalized_kg: null,\n    method: \"unknown_unit\",\n    confidence: 0.3\n  };\n}\n\n\n// ==========================================\n// CONTAINER COUNT NORMALIZATION\n// ==========================================\nfunction normalizeContainerCount(value) {\n\n  if (\n    value === null ||\n    value === undefined ||\n    String(value).trim() === \"\"\n  ) {\n    return {\n      original: value,\n      normalized_count: null,\n      method: \"missing\",\n      confidence: 0\n    };\n  }\n\n\n  // Already numeric\n  if (typeof value === \"number\") {\n\n    if (\n      Number.isInteger(value) &&\n      value >= 0\n    ) {\n      return {\n        original: value,\n        normalized_count: value,\n        method: \"already_numeric\",\n        confidence: 1.0\n      };\n    }\n\n    return {\n      original: value,\n      normalized_count: null,\n      method: \"invalid_number\",\n      confidence: 0\n    };\n  }\n\n\n  const text = String(value)\n    .toUpperCase()\n    .trim()\n    .replace(/\\s+/g, \" \");\n\n\n  // ----------------------------------------\n  // Pattern:\n  // 2 x 40HC\n  // 2 X 40' HC\n  // 3 x 20GP\n  // ----------------------------------------\n  const xPattern =\n    text.match(/\\b(\\d+)\\s*[X×]\\s*\\d+/);\n\n  if (xPattern) {\n    return {\n      original: value,\n      normalized_count: Number(xPattern[1]),\n      method: \"container_pattern\",\n      confidence: 1.0\n    };\n  }\n\n\n  // ----------------------------------------\n  // Pattern:\n  // 2 containers\n  // 1 container\n  // ----------------------------------------\n  const containerPattern =\n    text.match(/\\b(\\d+)\\s*CONTAINERS?\\b/);\n\n  if (containerPattern) {\n    return {\n      original: value,\n      normalized_count:\n        Number(containerPattern[1]),\n      method: \"container_text\",\n      confidence: 1.0\n    };\n  }\n\n\n  // ----------------------------------------\n  // String containing only a number\n  // \"2\" → 2\n  // ----------------------------------------\n  if (/^\\d+$/.test(text)) {\n    return {\n      original: value,\n      normalized_count: Number(text),\n      method: \"numeric_string\",\n      confidence: 1.0\n    };\n  }\n\n\n  // Cannot safely determine container count\n  return {\n    original: value,\n    normalized_count: null,\n    method: \"unresolved\",\n    confidence: 0\n  };\n}\n\n\n// ==========================================\n// PROCESS ALL ITEMS\n// ==========================================\nreturn items.map(item => {\n\n  const data =\n    item.json.output ?? item.json;\n\n  const weight =\n    normalizeWeight(data.gross_weight_kg);\n\n  const containers =\n    normalizeContainerCount(\n      data.container_count\n    );\n\n\n  return {\n    json: {\n\n      // Preserve existing data\n      ...item.json,\n\n      // Debugging / audit information\n      normalization: {\n\n        gross_weight: weight,\n\n        container_count: containers\n      },\n\n      // Values comparator will eventually use\n      normalized_gross_weight_kg:\n        weight.normalized_kg,\n\n      normalized_container_count:\n        containers.normalized_count\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3248,
+        5328
+      ],
+      "id": "bf490cb0-a3eb-4ae4-a423-95000d3cf443",
+      "name": "Weight + Container Converter"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      test_name: \"KG format\",\n      gross_weight_kg: \"22,000 KG\",\n      container_count: \"2 x 40HC\"\n    }\n  },\n\n  {\n    json: {\n      test_name: \"Metric tons\",\n      gross_weight_kg: \"22 MT\",\n      container_count: \"2 X 40' HC\"\n    }\n  },\n\n  {\n    json: {\n      test_name: \"Pounds\",\n      gross_weight_kg: \"48501.7 LBS\",\n      container_count: \"2 containers\"\n    }\n  },\n\n  {\n    json: {\n      test_name: \"Already normalized\",\n      gross_weight_kg: 22000,\n      container_count: 2\n    }\n  },\n\n  {\n    json: {\n      test_name: \"Unknown values\",\n      gross_weight_kg: \"UNKNOWN\",\n      container_count: \"UNKNOWN\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3024,
+        5328
+      ],
+      "id": "f7c9cbdd-3b02-43c3-80e0-71913f6b95c2",
+      "name": "Test Weight Container Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const extracted = $input.all();\nconst sourceDocs = $('Prepare Document').all();\n\n// ==========================================\n// GROUP SI + BL BY EMAIL\n// ==========================================\n\nconst grouped = {};\n\nfor (let i = 0; i < extracted.length; i++) {\n  const source = sourceDocs[i]?.json;\n\n  if (!source) continue;\n\n  const emailId = source.email_id;\n  const type = source.document_type;\n\n  const data =\n    extracted[i].json.output ??\n    extracted[i].json;\n\n  if (!grouped[emailId]) {\n    grouped[emailId] = {};\n  }\n\n  grouped[emailId][type] = data;\n}\n\n\n// ==========================================\n// PORT ALIAS DATABASE\n// ==========================================\n\nconst PORT_ALIASES = {\n  \"PORT KLANG\": \"MYPKG\",\n  \"PORT KLANG WESTPORT\": \"MYPKG\",\n  \"PORT KLANG MALAYSIA\": \"MYPKG\",\n  \"KLANG\": \"MYPKG\",\n\n  \"NANTONG\": \"CNNTG\",\n  \"NANTONG CHINA\": \"CNNTG\",\n\n  \"KARACHI\": \"PKKHI\",\n  \"KARACHI PAKISTAN\": \"PKKHI\",\n\n  \"CALLAO\": \"PECLL\",\n  \"CALLAO PERU\": \"PECLL\"\n};\n\n\n// ==========================================\n// NORMAL TEXT\n// ==========================================\n\nfunction normalizeText(value) {\n  if (value === null || value === undefined) {\n    return \"\";\n  }\n\n  return String(value)\n    .trim()\n    .toUpperCase()\n    .replace(/\\s+/g, \" \")\n    .replace(/[.,]/g, \"\");\n}\n\n\n// ==========================================\n// PORT NORMALIZATION\n// ==========================================\n\nfunction cleanPort(value) {\n  if (value === null || value === undefined) {\n    return \"\";\n  }\n\n  return String(value)\n    .toUpperCase()\n    .trim()\n    .replace(/[(),.]/g, \" \")\n    .replace(/\\s+/g, \" \")\n    .trim();\n}\n\n\nfunction extractLocode(value) {\n  if (!value) {\n    return null;\n  }\n\n  const text = String(value).toUpperCase();\n\n  // Only trust an explicit LOCODE inside parentheses.\n  // Example: PORT KLANG (MYPKG)\n  const match =\n    text.match(/\\(([A-Z]{2}[A-Z0-9]{3})\\)/);\n\n  if (!match) {\n    return null;\n  }\n\n  return match[1];\n}\n\n\nfunction normalizePort(value) {\n  if (\n    value === null ||\n    value === undefined ||\n    String(value).trim() === \"\"\n  ) {\n    return null;\n  }\n\n  // Tier 1\n  const locode = extractLocode(value);\n\n  if (locode) {\n    return locode;\n  }\n\n  // Tier 2\n  const cleaned = cleanPort(value);\n\n  if (PORT_ALIASES[cleaned]) {\n    return PORT_ALIASES[cleaned];\n  }\n\n  // Tier 3 — conservative fallback\n  return cleaned;\n}\n\n\n// ==========================================\n// WEIGHT NORMALIZATION\n// ==========================================\n\nfunction normalizeWeight(value) {\n  if (\n    value === null ||\n    value === undefined ||\n    String(value).trim() === \"\"\n  ) {\n    return null;\n  }\n\n  // M3 may already give us kilograms\n  if (typeof value === \"number\") {\n    return value;\n  }\n\n  const text = String(value)\n    .toUpperCase()\n    .trim()\n    .replace(/,/g, \"\");\n\n  const numberMatch =\n    text.match(/-?\\d+(?:\\.\\d+)?/);\n\n  if (!numberMatch) {\n    return null;\n  }\n\n  const amount = Number(numberMatch[0]);\n\n  if (!Number.isFinite(amount) || amount < 0) {\n    return null;\n  }\n\n\n  // KG\n  if (\n    /\\bKG\\b/.test(text) ||\n    /\\bKGS\\b/.test(text) ||\n    /\\bKILOGRAMS?\\b/.test(text)\n  ) {\n    return amount;\n  }\n\n\n  // Metric tons\n  if (\n    /\\bMT\\b/.test(text) ||\n    /\\bMETRIC\\s+TONS?\\b/.test(text) ||\n    /\\bTONNES?\\b/.test(text)\n  ) {\n    return amount * 1000;\n  }\n\n\n  // Pounds\n  if (\n    /\\bLBS?\\b/.test(text) ||\n    /\\bPOUNDS?\\b/.test(text)\n  ) {\n    return amount * 0.453592;\n  }\n\n\n  // Unknown unit\n  return null;\n}\n\n\n// ==========================================\n// CONTAINER NORMALIZATION\n// ==========================================\n\nfunction normalizeContainerCount(value) {\n  if (\n    value === null ||\n    value === undefined ||\n    String(value).trim() === \"\"\n  ) {\n    return null;\n  }\n\n\n  if (typeof value === \"number\") {\n    if (\n      Number.isInteger(value) &&\n      value >= 0\n    ) {\n      return value;\n    }\n\n    return null;\n  }\n\n\n  const text = String(value)\n    .toUpperCase()\n    .trim()\n    .replace(/\\s+/g, \" \");\n\n\n  // Example: 2 x 40HC\n  const xPattern =\n    text.match(/\\b(\\d+)\\s*[X×]\\s*\\d+/);\n\n  if (xPattern) {\n    return Number(xPattern[1]);\n  }\n\n\n  // Example: 2 containers\n  const containerPattern =\n    text.match(/\\b(\\d+)\\s*CONTAINERS?\\b/);\n\n  if (containerPattern) {\n    return Number(containerPattern[1]);\n  }\n\n\n  // Example: \"2\"\n  if (/^\\d+$/.test(text)) {\n    return Number(text);\n  }\n\n\n  return null;\n}\n\n\n// ==========================================\n// WEIGHT COMPARISON WITH TOLERANCE\n// ==========================================\n\nfunction weightsEqual(a, b) {\n  if (a === null || b === null) {\n    return false;\n  }\n\n  const difference = Math.abs(a - b);\n\n  /*\n    Unit conversions such as LBS → KG can create\n    tiny decimal differences.\n\n    Example:\n    22000 KG\n    vs\n    48501.7 LBS → 21999.983 KG\n\n    Difference = 0.017 KG.\n\n    We allow a maximum difference of 0.5 KG.\n  */\n\n  return difference <= 0.5;\n}\n\n\n// ==========================================\n// COMPARE SI VS BL\n// ==========================================\n\nconst results = [];\n\nfor (const [emailId, docs] of Object.entries(grouped)) {\n\n  const si = docs.SI;\n  const bl = docs.BL;\n\n\n  // ========================================\n  // MISSING SI / BL\n  // ========================================\n\n  if (!si || !bl) {\n    results.push({\n      json: {\n        email_id: emailId,\n        status: \"NEEDS_REVIEW\",\n        review_reason: \"missing_attachment\",\n        has_defect: false,\n        defect_fields: []\n      }\n    });\n\n    continue;\n  }\n\n\n  const defectFields = [];\n\n\n  // ========================================\n  // TEXT FIELDS\n  // ========================================\n\n  const textFields = [\n    \"shipper\",\n    \"consignee\",\n    \"notify_party\"\n  ];\n\n  for (const field of textFields) {\n\n    const siValue =\n      normalizeText(si[field]);\n\n    const blValue =\n      normalizeText(bl[field]);\n\n    if (siValue !== blValue) {\n      defectFields.push(field);\n    }\n  }\n\n\n  // ========================================\n  // PORT OF LOADING\n  // ========================================\n\n  const siPOL =\n    normalizePort(si.port_of_loading);\n\n  const blPOL =\n    normalizePort(bl.port_of_loading);\n\n  if (siPOL !== blPOL) {\n    defectFields.push(\"port_of_loading\");\n  }\n\n\n  // ========================================\n  // PORT OF DISCHARGE\n  // ========================================\n\n  const siPOD =\n    normalizePort(si.port_of_discharge);\n\n  const blPOD =\n    normalizePort(bl.port_of_discharge);\n\n  if (siPOD !== blPOD) {\n    defectFields.push(\"port_of_discharge\");\n  }\n\n\n  // ========================================\n  // CONTAINER COUNT\n  // ========================================\n\n  const siContainers =\n    normalizeContainerCount(\n      si.container_count\n    );\n\n  const blContainers =\n    normalizeContainerCount(\n      bl.container_count\n    );\n\n  if (\n    siContainers === null ||\n    blContainers === null\n  ) {\n    defectFields.push(\"container_count\");\n  }\n  else if (siContainers !== blContainers) {\n    defectFields.push(\"container_count\");\n  }\n\n\n  // ========================================\n  // GROSS WEIGHT\n  // ========================================\n\n  const siWeight =\n    normalizeWeight(\n      si.gross_weight_kg\n    );\n\n  const blWeight =\n    normalizeWeight(\n      bl.gross_weight_kg\n    );\n\n  if (!weightsEqual(siWeight, blWeight)) {\n    defectFields.push(\"gross_weight_kg\");\n  }\n\n\n  // ========================================\n  // FINAL STATUS\n  // ========================================\n\n  const hasDefect =\n    defectFields.length > 0;\n\n\n  results.push({\n    json: {\n\n      email_id: emailId,\n\n      status:\n        hasDefect\n          ? \"MISMATCH\"\n          : \"OK\",\n\n      review_reason: null,\n\n      has_defect: hasDefect,\n\n      defect_fields: defectFields,\n\n\n      // Keep original extraction for debugging\n      si_extracted: si,\n      bl_extracted: bl,\n\n\n      // Helpful during P1 testing\n      normalized_debug: {\n\n        si: {\n          port_of_loading: siPOL,\n          port_of_discharge: siPOD,\n          container_count: siContainers,\n          gross_weight_kg: siWeight\n        },\n\n        bl: {\n          port_of_loading: blPOL,\n          port_of_discharge: blPOD,\n          container_count: blContainers,\n          gross_weight_kg: blWeight\n        }\n      }\n    }\n  });\n}\n\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4880,
+        4240
+      ],
+      "id": "b95b1c6a-97c9-40a3-a478-90b040ac9cd5",
+      "name": "SI vs BL - P1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  // ==========================================\n  // TEST 1: Same values, different formats\n  // Expected: OK\n  // ==========================================\n  {\n    json: {\n      email_id: \"test_p1_001\",\n      document_type: \"SI\",\n\n      output: {\n        shipper: \"ABC SHIPPING SDN BHD\",\n        consignee: \"GLOBAL TRADING LTD\",\n        notify_party: \"GLOBAL TRADING LTD\",\n\n        port_of_loading: \"Port Klang, Malaysia\",\n        port_of_discharge: \"Callao, Peru\",\n\n        container_count: \"2 x 40HC\",\n        gross_weight_kg: \"22 MT\"\n      }\n    }\n  },\n\n  {\n    json: {\n      email_id: \"test_p1_001\",\n      document_type: \"BL\",\n\n      output: {\n        shipper: \"ABC SHIPPING SDN BHD\",\n        consignee: \"GLOBAL TRADING LTD\",\n        notify_party: \"GLOBAL TRADING LTD\",\n\n        port_of_loading: \"PORT KLANG (MYPKG)\",\n        port_of_discharge: \"CALLAO, PERU (PECLL)\",\n\n        container_count: 2,\n        gross_weight_kg: \"22,000 KG\"\n      }\n    }\n  },\n\n\n  // ==========================================\n  // TEST 2: Pounds vs KG\n  // Expected: OK\n  // ==========================================\n  {\n    json: {\n      email_id: \"test_p1_002\",\n      document_type: \"SI\",\n\n      output: {\n        shipper: \"TEST COMPANY\",\n        consignee: \"TEST BUYER\",\n        notify_party: \"TEST BUYER\",\n\n        port_of_loading: \"Nantong, China\",\n        port_of_discharge: \"Karachi, Pakistan\",\n\n        container_count: \"1 container\",\n        gross_weight_kg: \"48501.7 LBS\"\n      }\n    }\n  },\n\n  {\n    json: {\n      email_id: \"test_p1_002\",\n      document_type: \"BL\",\n\n      output: {\n        shipper: \"TEST COMPANY\",\n        consignee: \"TEST BUYER\",\n        notify_party: \"TEST BUYER\",\n\n        port_of_loading: \"NANTONG, CHINA (CNNTG)\",\n        port_of_discharge: \"KARACHI, PAKISTAN (PKKHI)\",\n\n        container_count: 1,\n        gross_weight_kg: \"22000 KG\"\n      }\n    }\n  },\n\n\n  // ==========================================\n  // TEST 3: Real weight defect\n  // Expected: MISMATCH → gross_weight_kg\n  // ==========================================\n  {\n    json: {\n      email_id: \"test_p1_003\",\n      document_type: \"SI\",\n\n      output: {\n        shipper: \"TEST COMPANY\",\n        consignee: \"TEST BUYER\",\n        notify_party: \"TEST BUYER\",\n\n        port_of_loading: \"Port Klang, Malaysia\",\n        port_of_discharge: \"Callao, Peru\",\n\n        container_count: \"2 x 40HC\",\n        gross_weight_kg: \"22 MT\"\n      }\n    }\n  },\n\n  {\n    json: {\n      email_id: \"test_p1_003\",\n      document_type: \"BL\",\n\n      output: {\n        shipper: \"TEST COMPANY\",\n        consignee: \"TEST BUYER\",\n        notify_party: \"TEST BUYER\",\n\n        port_of_loading: \"PORT KLANG (MYPKG)\",\n        port_of_discharge: \"CALLAO (PECLL)\",\n\n        container_count: 2,\n        gross_weight_kg: \"23000 KG\"\n      }\n    }\n  },\n\n\n  // ==========================================\n  // TEST 4: Real container defect\n  // Expected: MISMATCH → container_count\n  // ==========================================\n  {\n    json: {\n      email_id: \"test_p1_004\",\n      document_type: \"SI\",\n\n      output: {\n        shipper: \"TEST COMPANY\",\n        consignee: \"TEST BUYER\",\n        notify_party: \"TEST BUYER\",\n\n        port_of_loading: \"Nantong, China\",\n        port_of_discharge: \"Karachi, Pakistan\",\n\n        container_count: \"2 X 40' HC\",\n        gross_weight_kg: \"22000 KG\"\n      }\n    }\n  },\n\n  {\n    json: {\n      email_id: \"test_p1_004\",\n      document_type: \"BL\",\n\n      output: {\n        shipper: \"TEST COMPANY\",\n        consignee: \"TEST BUYER\",\n        notify_party: \"TEST BUYER\",\n\n        port_of_loading: \"NANTONG (CNNTG)\",\n        port_of_discharge: \"KARACHI (PKKHI)\",\n\n        container_count: \"3 containers\",\n        gross_weight_kg: \"22 MT\"\n      }\n    }\n  },\n\n\n  // ==========================================\n  // TEST 5: Real port defect\n  // Expected: MISMATCH → port_of_discharge\n  // ==========================================\n  {\n    json: {\n      email_id: \"test_p1_005\",\n      document_type: \"SI\",\n\n      output: {\n        shipper: \"TEST COMPANY\",\n        consignee: \"TEST BUYER\",\n        notify_party: \"TEST BUYER\",\n\n        port_of_loading: \"Port Klang, Malaysia\",\n        port_of_discharge: \"Callao, Peru\",\n\n        container_count: 2,\n        gross_weight_kg: \"22000 KG\"\n      }\n    }\n  },\n\n  {\n    json: {\n      email_id: \"test_p1_005\",\n      document_type: \"BL\",\n\n      output: {\n        shipper: \"TEST COMPANY\",\n        consignee: \"TEST BUYER\",\n        notify_party: \"TEST BUYER\",\n\n        port_of_loading: \"PORT KLANG (MYPKG)\",\n\n        // Deliberately different port\n        port_of_discharge: \"KARACHI, PAKISTAN (PKKHI)\",\n\n        container_count: 2,\n        gross_weight_kg: \"22 MT\"\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4144,
+        5072
+      ],
+      "id": "b5fca785-84bd-4201-be2a-1a7eb7fb88fb",
+      "name": "Test P1 Comparison Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const extracted = $input.all();\n\n// ==========================================\n// GROUP SI + BL BY EMAIL\n// ==========================================\n\nconst grouped = {};\n\nfor (const item of extracted) {\n\n  const source = item.json;\n\n  const emailId = source.email_id;\n  const type = source.document_type;\n\n  const data =\n    source.output ??\n    source;\n\n  if (!emailId || !type) {\n    continue;\n  }\n\n  if (!grouped[emailId]) {\n    grouped[emailId] = {};\n  }\n\n  grouped[emailId][type] = data;\n}\n\n\n// ==========================================\n// PORT ALIAS DATABASE\n// ==========================================\n\nconst PORT_ALIASES = {\n\n  // Malaysia\n  \"PORT KLANG\": \"MYPKG\",\n  \"PORT KLANG WESTPORT\": \"MYPKG\",\n  \"PORT KLANG MALAYSIA\": \"MYPKG\",\n  \"KLANG\": \"MYPKG\",\n\n  // China\n  \"NANTONG\": \"CNNTG\",\n  \"NANTONG CHINA\": \"CNNTG\",\n\n  // Pakistan\n  \"KARACHI\": \"PKKHI\",\n  \"KARACHI PAKISTAN\": \"PKKHI\",\n\n  // Peru\n  \"CALLAO\": \"PECLL\",\n  \"CALLAO PERU\": \"PECLL\"\n};\n\n\n// ==========================================\n// NORMALIZE NORMAL TEXT\n// ==========================================\n\nfunction normalizeText(value) {\n\n  if (\n    value === null ||\n    value === undefined\n  ) {\n    return \"\";\n  }\n\n  return String(value)\n    .trim()\n    .toUpperCase()\n    .replace(/\\s+/g, \" \")\n    .replace(/[.,]/g, \"\");\n}\n\n\n// ==========================================\n// PORT NORMALIZATION\n// ==========================================\n\nfunction cleanPort(value) {\n\n  if (\n    value === null ||\n    value === undefined\n  ) {\n    return \"\";\n  }\n\n  return String(value)\n    .toUpperCase()\n    .trim()\n    .replace(/[(),.]/g, \" \")\n    .replace(/\\s+/g, \" \")\n    .trim();\n}\n\n\nfunction extractLocode(value) {\n\n  if (!value) {\n    return null;\n  }\n\n  const text =\n    String(value).toUpperCase();\n\n  // Only accept explicit UN/LOCODE in parentheses.\n  // Prevents words such as KLANG and CHINA\n  // from being detected as LOCODEs.\n\n  const match =\n    text.match(/\\(([A-Z]{2}[A-Z0-9]{3})\\)/);\n\n  if (!match) {\n    return null;\n  }\n\n  return match[1];\n}\n\n\nfunction normalizePort(value) {\n\n  if (\n    value === null ||\n    value === undefined ||\n    String(value).trim() === \"\"\n  ) {\n    return null;\n  }\n\n\n  // ----------------------------------------\n  // TIER 1\n  // Explicit UN/LOCODE\n  // ----------------------------------------\n\n  const locode =\n    extractLocode(value);\n\n  if (locode) {\n    return locode;\n  }\n\n\n  // ----------------------------------------\n  // TIER 2\n  // Alias database\n  // ----------------------------------------\n\n  const cleaned =\n    cleanPort(value);\n\n  if (PORT_ALIASES[cleaned]) {\n    return PORT_ALIASES[cleaned];\n  }\n\n\n  // ----------------------------------------\n  // TIER 3\n  // Conservative normalized text\n  // ----------------------------------------\n\n  return cleaned;\n}\n\n\n// ==========================================\n// WEIGHT NORMALIZATION\n// ==========================================\n\nfunction normalizeWeight(value) {\n\n  if (\n    value === null ||\n    value === undefined ||\n    String(value).trim() === \"\"\n  ) {\n    return null;\n  }\n\n\n  // Already numeric.\n  // Assume M3 already returned KG.\n  if (typeof value === \"number\") {\n    return value;\n  }\n\n\n  const text =\n    String(value)\n      .toUpperCase()\n      .trim()\n      .replace(/,/g, \"\");\n\n\n  const numberMatch =\n    text.match(/-?\\d+(?:\\.\\d+)?/);\n\n\n  if (!numberMatch) {\n    return null;\n  }\n\n\n  const amount =\n    Number(numberMatch[0]);\n\n\n  if (\n    !Number.isFinite(amount) ||\n    amount < 0\n  ) {\n    return null;\n  }\n\n\n  // ----------------------------------------\n  // KG\n  // ----------------------------------------\n\n  if (\n    /\\bKG\\b/.test(text) ||\n    /\\bKGS\\b/.test(text) ||\n    /\\bKILOGRAMS?\\b/.test(text)\n  ) {\n    return amount;\n  }\n\n\n  // ----------------------------------------\n  // METRIC TON\n  // ----------------------------------------\n\n  if (\n    /\\bMT\\b/.test(text) ||\n    /\\bMETRIC\\s+TONS?\\b/.test(text) ||\n    /\\bTONNES?\\b/.test(text)\n  ) {\n    return amount * 1000;\n  }\n\n\n  // ----------------------------------------\n  // POUNDS\n  // ----------------------------------------\n\n  if (\n    /\\bLBS?\\b/.test(text) ||\n    /\\bPOUNDS?\\b/.test(text)\n  ) {\n    return amount * 0.453592;\n  }\n\n\n  // Unknown unit → don't guess\n  return null;\n}\n\n\n// ==========================================\n// CONTAINER COUNT NORMALIZATION\n// ==========================================\n\nfunction normalizeContainerCount(value) {\n\n  if (\n    value === null ||\n    value === undefined ||\n    String(value).trim() === \"\"\n  ) {\n    return null;\n  }\n\n\n  // Already numeric\n  if (typeof value === \"number\") {\n\n    if (\n      Number.isInteger(value) &&\n      value >= 0\n    ) {\n      return value;\n    }\n\n    return null;\n  }\n\n\n  const text =\n    String(value)\n      .toUpperCase()\n      .trim()\n      .replace(/\\s+/g, \" \");\n\n\n  // ----------------------------------------\n  // Example:\n  // 2 x 40HC\n  // 2 X 40' HC\n  // ----------------------------------------\n\n  const xPattern =\n    text.match(/\\b(\\d+)\\s*[X×]\\s*\\d+/);\n\n  if (xPattern) {\n    return Number(xPattern[1]);\n  }\n\n\n  // ----------------------------------------\n  // Example:\n  // 2 containers\n  // 1 container\n  // ----------------------------------------\n\n  const containerPattern =\n    text.match(/\\b(\\d+)\\s*CONTAINERS?\\b/);\n\n  if (containerPattern) {\n    return Number(containerPattern[1]);\n  }\n\n\n  // ----------------------------------------\n  // Example:\n  // \"2\"\n  // ----------------------------------------\n\n  if (/^\\d+$/.test(text)) {\n    return Number(text);\n  }\n\n\n  // Cannot safely resolve\n  return null;\n}\n\n\n// ==========================================\n// WEIGHT COMPARISON\n// ==========================================\n\nfunction weightsEqual(a, b) {\n\n  if (\n    a === null ||\n    b === null\n  ) {\n    return false;\n  }\n\n  const difference =\n    Math.abs(a - b);\n\n  // Allow tiny conversion differences.\n  // Example:\n  //\n  // 48501.7 LBS\n  // = 21999.983 KG\n  //\n  // vs\n  //\n  // 22000 KG\n\n  return difference <= 0.5;\n}\n\n\n// ==========================================\n// COMPARE SI VS BL\n// ==========================================\n\nconst results = [];\n\n\nfor (\n  const [emailId, docs]\n  of Object.entries(grouped)\n) {\n\n  const si = docs.SI;\n  const bl = docs.BL;\n\n\n  // ========================================\n  // MISSING DOCUMENT\n  // ========================================\n\n  if (!si || !bl) {\n\n    results.push({\n      json: {\n\n        email_id: emailId,\n\n        status: \"NEEDS_REVIEW\",\n\n        review_reason:\n          \"missing_attachment\",\n\n        has_defect: false,\n\n        defect_fields: []\n      }\n    });\n\n    continue;\n  }\n\n\n  const defectFields = [];\n\n\n  // ========================================\n  // TEXT FIELDS\n  // ========================================\n\n  const textFields = [\n    \"shipper\",\n    \"consignee\",\n    \"notify_party\"\n  ];\n\n\n  for (const field of textFields) {\n\n    const siValue =\n      normalizeText(si[field]);\n\n    const blValue =\n      normalizeText(bl[field]);\n\n\n    if (siValue !== blValue) {\n      defectFields.push(field);\n    }\n  }\n\n\n  // ========================================\n  // PORT OF LOADING\n  // ========================================\n\n  const siPOL =\n    normalizePort(\n      si.port_of_loading\n    );\n\n  const blPOL =\n    normalizePort(\n      bl.port_of_loading\n    );\n\n\n  if (siPOL !== blPOL) {\n    defectFields.push(\n      \"port_of_loading\"\n    );\n  }\n\n\n  // ========================================\n  // PORT OF DISCHARGE\n  // ========================================\n\n  const siPOD =\n    normalizePort(\n      si.port_of_discharge\n    );\n\n  const blPOD =\n    normalizePort(\n      bl.port_of_discharge\n    );\n\n\n  if (siPOD !== blPOD) {\n    defectFields.push(\n      \"port_of_discharge\"\n    );\n  }\n\n\n  // ========================================\n  // CONTAINER COUNT\n  // ========================================\n\n  const siContainers =\n    normalizeContainerCount(\n      si.container_count\n    );\n\n  const blContainers =\n    normalizeContainerCount(\n      bl.container_count\n    );\n\n\n  if (\n    siContainers === null ||\n    blContainers === null\n  ) {\n\n    defectFields.push(\n      \"container_count\"\n    );\n\n  } else if (\n    siContainers !== blContainers\n  ) {\n\n    defectFields.push(\n      \"container_count\"\n    );\n  }\n\n\n  // ========================================\n  // GROSS WEIGHT\n  // ========================================\n\n  const siWeight =\n    normalizeWeight(\n      si.gross_weight_kg\n    );\n\n  const blWeight =\n    normalizeWeight(\n      bl.gross_weight_kg\n    );\n\n\n  if (\n    !weightsEqual(\n      siWeight,\n      blWeight\n    )\n  ) {\n\n    defectFields.push(\n      \"gross_weight_kg\"\n    );\n  }\n\n\n  // ========================================\n  // FINAL RESULT\n  // ========================================\n\n  const hasDefect =\n    defectFields.length > 0;\n\n\n  results.push({\n    json: {\n\n      email_id: emailId,\n\n      status:\n        hasDefect\n          ? \"MISMATCH\"\n          : \"OK\",\n\n      review_reason: null,\n\n      has_defect:\n        hasDefect,\n\n      defect_fields:\n        defectFields,\n\n\n      // ====================================\n      // DEBUG INFORMATION\n      // ====================================\n\n      normalized_debug: {\n\n        si: {\n\n          port_of_loading:\n            siPOL,\n\n          port_of_discharge:\n            siPOD,\n\n          container_count:\n            siContainers,\n\n          gross_weight_kg:\n            siWeight\n        },\n\n\n        bl: {\n\n          port_of_loading:\n            blPOL,\n\n          port_of_discharge:\n            blPOD,\n\n          container_count:\n            blContainers,\n\n          gross_weight_kg:\n            blWeight\n        }\n      }\n    }\n  });\n}\n\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4368,
+        5072
+      ],
+      "id": "a509a5c9-10b0-4f1e-8a45-e68e1579ecd5",
+      "name": "SI vs BL - P1 TEST"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Test Output",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent （Category Distribution）",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Non-BL or BL request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent （Category Distribution）",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent （Category Distribution）": {
+      "main": [
+        [
+          {
+            "node": "Prepare Classified Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI_PROCESSING_ERROR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out1": {
+      "main": [
+        [
+          {
+            "node": "Identify Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Split Out1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "SI vs BL - P1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extraction Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identify Attachment": {
+      "main": [
+        [
+          {
+            "node": "Get Attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Attachment": {
+      "main": [
+        [
+          {
+            "node": "Prepare Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Document": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SI vs BL": {
+      "main": [
+        []
+      ]
+    },
+    "missing attachment": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Prepare Email": {
+      "main": [
+        [
+          {
+            "node": "AI Agent （Category Distribution）",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Classified Email": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Serialize BL Result": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Build Submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "missing attachment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Non-BL or BL request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Non-BL or BL request": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "AI_PROCESSING_ERROR": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Extraction Error": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Port Resolver": {
+      "main": [
+        []
+      ]
+    },
+    "Test Port Data": {
+      "main": [
+        [
+          {
+            "node": "Port Resolver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weight + Container Converter": {
+      "main": [
+        []
+      ]
+    },
+    "Test Weight Container Data": {
+      "main": [
+        [
+          {
+            "node": "Weight + Container Converter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SI vs BL - P1": {
+      "main": [
+        [
+          {
+            "node": "Serialize BL Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test P1 Comparison Data": {
+      "main": [
+        [
+          {
+            "node": "SI vs BL - P1 TEST",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5200b9c8-b4db-46e3-8557-5e9f645e7d96",
+  "meta": {
+    "instanceId": "b02de1fedddcaae855afd387e8fbc3c6b82f0301a2d4d671cf795abd22a691ff"
+  },
+  "nodeGroups": [],
+  "id": "0ow3bDPHgvUQ3Ymr",
+  "tags": []
+}
