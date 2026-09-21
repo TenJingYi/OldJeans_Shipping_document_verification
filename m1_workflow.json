@@ -7,7 +7,7 @@
       "typeVersion": 1,
       "position": [
         0,
-        -64
+        -80
       ],
       "id": "1434f97c-a384-44fd-b79d-10422b612572",
       "name": "When clicking ‘Execute workflow’"
@@ -30,7 +30,7 @@
       "typeVersion": 4.5,
       "position": [
         224,
-        -64
+        -80
       ],
       "id": "6c1fdc66-8379-4690-b46c-44e8e1d9caf8",
       "name": "HTTP Request"
@@ -43,7 +43,7 @@
       "typeVersion": 2,
       "position": [
         448,
-        -160
+        -176
       ],
       "id": "5b1e7d3f-9e53-42d8-80a3-168b4b993f5f",
       "name": "Test Output"
@@ -56,7 +56,7 @@
       "typeVersion": 1.1,
       "position": [
         680,
-        264
+        232
       ],
       "id": "1b2ebef9-81ec-4b73-b6a4-10acd3b6026c",
       "name": "Google Gemini Chat Model"
@@ -65,7 +65,7 @@
       "parameters": {
         "conditions": {
           "options": {
-            "caseSensitive": true,
+            "caseSensitive": false,
             "leftValue": "",
             "typeValidation": "strict",
             "version": 3
@@ -73,7 +73,7 @@
           "conditions": [
             {
               "id": "17465748-45b1-4c2b-b29e-5a7f65c78b3b",
-              "leftValue": "Category",
+              "leftValue": "category",
               "rightValue": "BL_COMPARISON",
               "operator": {
                 "type": "string",
@@ -84,13 +84,15 @@
           ],
           "combinator": "and"
         },
-        "options": {}
+        "options": {
+          "ignoreCase": true
+        }
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
         1024,
-        32
+        16
       ],
       "id": "b7ec3bf8-cb8d-44b1-98ee-2531e3260f5f",
       "name": "If"
@@ -101,47 +103,38 @@
       "typeVersion": 1,
       "position": [
         448,
-        32
+        16
       ],
       "id": "98fd551b-a34e-4c95-b87d-b744709fb758",
       "name": "Limit"
     },
     {
-      "parameters": {},
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"category\": \"BL_COMPARISON\",\n  \"confidence\": 0.95\n}\n"
+      },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
         808,
-        264
+        232
       ],
       "id": "83860083-456b-4239-9bf4-e1ef880db1c5",
       "name": "Structured Output Parser"
     },
     {
       "parameters": {
-        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2944,
-        320
-      ],
-      "id": "a767a675-8df1-4a14-b6f4-339e89c09203",
-      "name": "Code in JavaScript1"
-    },
-    {
-      "parameters": {
         "promptType": "define",
-        "text": "=Classify the following email into one of these categories:\nBL_COMPARISON, SI_REQUEST, INVOICE_QUERY, GENERAL, SPAM.\n\nEmail ID:\n{{ $json.email_id }}\n\nFrom:\n{{ $json.from }}\n\nSubject:\n{{ $json.subject }}\n\nBody:\n{{ $json.body }}",
+        "text": "=Email Subject:  {{ $('HTTP Request').item.json.subject }}\nEmail Body:{{ $('HTTP Request').item.json.body}}\nEmail Attachment: {{ $('HTTP Request').item.json.attachments }}",
         "hasOutputParser": true,
-        "options": {}
+        "options": {
+          "systemMessage": "You are an AI assistant for a shipping document verification system. Classify the given email into exactly ONE of the following 5 categories:\n\n1. BL_COMPARISON: Emails that contain or request Bill of Lading (BL) and shipping comparisons, usually involving attachments.\n2. SI_REQUEST: Shipping Instruction requests or submissions.\n3. INVOICE_QUERY: Inquiries related to billing, invoices, or payments.\n4. GENERAL: General shipping inquiries or standard communications.\n5. SPAM: Irrelevant emails, advertisements, or spam mimicking shipping language.\n\nOutput your result strictly in valid JSON format with the following keys:\n{\n  \"category\": \"YOUR_CHOICE_HERE\",\n  \"confidence\": 0.95\n}You are a helpful assistant"
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
         672,
-        32
+        16
       ],
       "id": "cf7bee3c-7d86-4fe0-8aa1-9fc16e513425",
       "name": "AI Agent （Category Distribution）"
@@ -258,8 +251,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2944,
-        128
+        1472,
+        96
       ],
       "id": "e5fa76ff-d326-4ede-bfc9-2bc6fc053e29",
       "name": "Code in JavaScript"
@@ -326,7 +319,7 @@
     },
     {
       "parameters": {
-        "content": "## I'm a note \ncategory"
+        "content": "## I'm a note \ncategory\n\n这里需要confidence吗？\n"
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
@@ -339,7 +332,7 @@
     },
     {
       "parameters": {
-        "content": "## I'm a note \nnum of attachment >=2"
+        "content": "## I'm a note \nnum of attachment >=2\n\nfalse:\nNEEDS_REVIEW missing_attachment "
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
@@ -391,7 +384,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+        "jsCode": "// Get the input data from the previous node\nconst input = $input.first().json;\n\n// Get email ID\nconst emailId = input.email_id;\n\n// Build the required output format\nreturn [\n  {\n    json: {\n      [emailId]: {\n        category: input.category,\n        status: input.status,\n        review_reason: input.review_reason ?? null,\n        defect_fields: input.defect_fields ?? [],\n        has_defect: input.has_defect ?? false\n      }\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -454,7 +447,7 @@
         ],
         [
           {
-            "node": "Code in JavaScript1",
+            "node": "Code in JavaScript5",
             "type": "main",
             "index": 0
           }
@@ -633,17 +626,6 @@
           }
         ]
       ]
-    },
-    "Code in JavaScript1": {
-      "main": [
-        [
-          {
-            "node": "Code in JavaScript5",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "active": false,
@@ -651,7 +633,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "bd895ec0-060f-434b-b838-49e75abe92ea",
+  "versionId": "7851c01a-0973-415e-a6b3-001afeab68b5",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "dcfa4e604c43538d805cee61a25d4d89fe7c0b4bb6141e5b3f1f2868fc73b735"
