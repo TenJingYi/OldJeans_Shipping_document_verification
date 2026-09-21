@@ -6,10 +6,10 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -1584,
-        -144
+        -2528,
+        400
       ],
-      "id": "4069a215-807f-4949-8457-a6f98923bf0c",
+      "id": "f9698708-58a8-4384-ae7d-6532d65c8591",
       "name": "When clicking ‘Execute workflow’"
     },
     {
@@ -29,10 +29,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        -1360,
-        -144
+        -2304,
+        400
       ],
-      "id": "23041d8a-dbc4-4c71-9785-43f7cfdedb26",
+      "id": "bb5d6765-ad6d-4c59-861b-bc2810f7f0f1",
       "name": "HTTP Request"
     },
     {
@@ -42,10 +42,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1136,
-        -240
+        -2080,
+        304
       ],
-      "id": "dcc7ef35-3515-47b7-b2b5-24599664c7c6",
+      "id": "01fe5b79-caaf-46a2-a78e-e424035e018f",
       "name": "Test Output"
     },
     {
@@ -55,10 +55,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1.1,
       "position": [
-        -912,
-        176
+        -1856,
+        720
       ],
-      "id": "e70da1e1-2015-485d-803c-8e719436593f",
+      "id": "35ec8c89-e4f6-4e2c-8cf0-9054a98754ec",
       "name": "Google Gemini Chat Model",
       "credentials": {
         "googlePalmApi": {
@@ -97,10 +97,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -560,
-        -48
+        -1504,
+        496
       ],
-      "id": "54f4f486-5d19-4126-9446-01b7ed04f7c6",
+      "id": "fb8190f0-f7a9-4893-90e0-e481bee3961e",
       "name": "If"
     },
     {
@@ -110,23 +110,23 @@
       "type": "n8n-nodes-base.limit",
       "typeVersion": 1,
       "position": [
-        -1136,
-        -48
+        -2080,
+        496
       ],
-      "id": "432cbd1a-beee-4613-a2e7-a47fb9d10f3d",
+      "id": "8a97fa64-a522-475e-b707-43f9f78b99c9",
       "name": "Limit"
     },
     {
       "parameters": {
-        "jsonSchemaExample": "{\n  \"category\": \"BL_COMPARISON\",\n  \"confidence\": 0.95\n}\n"
+        "jsonSchemaExample": "{\n  \"category\": \"BL_COMPARISON\",\n  \"claim_attachment\": true\n}\n"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        -768,
-        176
+        -1712,
+        720
       ],
-      "id": "4443eff7-2127-4e34-be78-e37f6980d5ca",
+      "id": "c1be97ec-cffb-4310-95ce-b71884fbddd7",
       "name": "Structured Output Parser"
     },
     {
@@ -135,7 +135,7 @@
         "text": "=Email Subject:  {{ $('HTTP Request').item.json.subject }}\nEmail Body:{{ $('HTTP Request').item.json.body}}\nEmail Attachment: {{ $('HTTP Request').item.json.attachments }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "You are an AI assistant for a shipping document verification system. Classify the given email into exactly ONE of the following 5 categories:\n\n1. BL_COMPARISON: Emails that contain or request Bill of Lading (BL) and shipping comparisons, usually involving attachments.\n2. SI_REQUEST: Shipping Instruction requests or submissions.\n3. INVOICE_QUERY: Inquiries related to billing, invoices, or payments.\n4. GENERAL: General shipping inquiries or standard communications.\n5. SPAM: Irrelevant emails, advertisements, or spam mimicking shipping language.\n\nOutput your result strictly in valid JSON format with the following keys:\n{\n  \"category\": \"YOUR_CHOICE_HERE\",\n  \"confidence\": 0.95\n}You are a helpful assistant",
+          "systemMessage": "You are an AI assistant for a shipping document verification system. Classify the given email into exactly ONE of the following 5 categories:\n\n1. BL_COMPARISON: Emails that contain or request Bill of Lading (BL) and shipping comparisons, usually involving attachments.\n2. SI_REQUEST: Shipping Instruction requests or submissions.\n3. INVOICE_QUERY: Inquiries related to billing, invoices, or payments.\n4. GENERAL: General shipping inquiries or standard communications.\n5. SPAM: Irrelevant emails, advertisements, or spam mimicking shipping language.\n\nOutput your result strictly in valid JSON format with the following keys:\n{\n  \"category\": \"YOUR_CHOICE_HERE\",\n  \"claim_attachment\": true\n}You are a helpful assistant",
           "batching": {
             "batchSize": 3
           }
@@ -144,10 +144,10 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -912,
-        -48
+        -1856,
+        496
       ],
-      "id": "40ce03f4-342b-4ede-ac7a-15c0bec8ea39",
+      "id": "19454dd5-d2aa-4a88-8234-2ac79e8c9ace",
       "name": "AI Agent （Category Distribution）",
       "retryOnFail": true,
       "onError": "continueErrorOutput"
@@ -160,10 +160,10 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        112,
-        -272
+        -608,
+        272
       ],
-      "id": "a10d65ab-baf3-436b-81c6-13d9e9611de0",
+      "id": "ffd37ad3-65cc-45f2-a150-e7fbc27b438f",
       "name": "Split Out1"
     },
     {
@@ -181,11 +181,14 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1008,
-        -272
+        288,
+        272
       ],
-      "id": "613077fb-c948-4fa7-b808-155cefd588c1",
-      "name": "AI Agent"
+      "id": "c9dbedb8-19ed-4fb1-b5b6-d8fef56eb934",
+      "name": "AI Agent",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -215,10 +218,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -336,
-        -144
+        -1280,
+        400
       ],
-      "id": "b0a524c6-2704-46ca-b426-c197148d4ab0",
+      "id": "6f1670ce-3ea8-47c2-ad1b-438492d4e025",
       "name": "If2"
     },
     {
@@ -227,11 +230,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -928,
-        -256
+        -1872,
+        288
       ],
       "typeVersion": 1,
-      "id": "dde9968c-193f-4a18-9994-db0f69f05fb5",
+      "id": "f202d469-e421-4523-b132-e669700ff50d",
       "name": "Sticky Note"
     },
     {
@@ -240,11 +243,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -576,
-        -448
+        -1520,
+        96
       ],
       "typeVersion": 1,
-      "id": "cc55fd87-bbec-432b-95e9-7b2d0cb64aba",
+      "id": "458207f6-8e3a-4d89-9942-3205b75293b6",
       "name": "Sticky Note1"
     },
     {
@@ -253,11 +256,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        944,
-        -544
+        256,
+        32
       ],
       "typeVersion": 1,
-      "id": "8b289e63-4c17-4d65-8f4d-c5783c88c8f9",
+      "id": "eca9dd80-5b22-4488-b08a-c8e0c1a26999",
       "name": "Sticky Note2"
     },
     {
@@ -268,10 +271,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -112,
-        -272
+        -832,
+        272
       ],
-      "id": "fee6c6aa-bd90-4d64-a4cb-db0ccc19ef9a",
+      "id": "18241b73-d6af-459f-ae19-3319d843dbcc",
       "name": "Code in JavaScript1"
     },
     {
@@ -281,10 +284,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        336,
-        -272
+        -384,
+        272
       ],
-      "id": "404fd05d-12b1-4bf8-983b-4a8eb46a82b4",
+      "id": "1f6eac9d-5515-4248-a841-2f46b4ccfbe5",
       "name": "Identify Attachment"
     },
     {
@@ -295,10 +298,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        560,
-        -272
+        -160,
+        272
       ],
-      "id": "fad44edc-2a9b-4aa3-b80d-c924855c0f1b",
+      "id": "0709c64d-4bcf-455b-889d-644926227842",
       "name": "Get Attachment"
     },
     {
@@ -308,10 +311,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        784,
-        -272
+        64,
+        272
       ],
-      "id": "4d028457-b220-450d-b08e-07337245b275",
+      "id": "d3b63250-7de0-4b44-9a89-d7322cd6aa7c",
       "name": "Prepare Document"
     },
     {
@@ -321,10 +324,10 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        1152,
-        -48
+        432,
+        496
       ],
-      "id": "9bb1f63b-6570-421a-bab8-fbb4bf1683f8",
+      "id": "4d080e39-3802-4c47-9fe8-36156c593905",
       "name": "Structured Output Parser1"
     },
     {
@@ -334,10 +337,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1360,
-        -272
+        640,
+        272
       ],
-      "id": "262d6ac6-2915-4a97-8a97-42e1d41e96b5",
+      "id": "97c4155d-e6a7-4bc1-a671-5b29b4c7f06e",
       "name": "SI vs BL"
     },
     {
@@ -347,25 +350,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1584,
-        -272
+        864,
+        272
       ],
-      "id": "ed31a826-41cb-4d3d-9544-e9eadd6ff33d",
+      "id": "b90ce995-2593-42af-a456-0021288edd15",
       "name": "Serialize BL Result"
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const email = $('HTTP Request').item.json;\n\nreturn {\n  json: {\n    email_id: email.email_id,\n    category: $json.output.category,\n    status: \"OK\",\n    review_reason: null,\n    has_defect: false,\n    defect_fields: []\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -112,
-        112
-      ],
-      "id": "e543b8a4-616b-4572-8b6a-c2d5a9435b5b",
-      "name": "Non-BL"
     },
     {
       "parameters": {
@@ -375,10 +364,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -112,
-        -64
+        -832,
+        480
       ],
-      "id": "bd975805-7fd3-445d-b582-6be0eaccaaaa",
+      "id": "96a7324c-0717-41e0-ba02-2b582b64b884",
       "name": "missing attachment"
     },
     {
@@ -388,10 +377,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1.1,
       "position": [
-        1024,
-        -48
+        304,
+        496
       ],
-      "id": "15b9d89e-5cce-41a0-8b55-e7c85ea11ebb",
+      "id": "7bbfb4a8-6ceb-400f-b71e-b420c89e26ce",
       "name": "Google Gemini Chat Model2",
       "credentials": {
         "googlePalmApi": {
@@ -402,15 +391,15 @@
     },
     {
       "parameters": {
-        "numberInputs": 4
+        "numberInputs": 5
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1808,
-        -32
+        1088,
+        512
       ],
-      "id": "4e83669c-afda-45fe-aa1c-f1ab8d53aa12",
+      "id": "09c0dbae-8b99-4b74-bfec-a1b884e1533e",
       "name": "Merge"
     },
     {
@@ -420,11 +409,69 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2080,
-        -16
+        1312,
+        560
       ],
-      "id": "c777c390-ec36-40b3-8b31-8f2c8dc881e6",
+      "id": "38ed33b6-63b9-4916-b9ec-47ccf4437422",
       "name": "Build Submission"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const email = $('HTTP Request').item.json;\n\nreturn {\n  json: {\n    email_id: email.email_id,\n    category: $json.output.category,\n    status: \"OK\",\n    review_reason: null,\n    has_defect: false,\n    defect_fields: []\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -832,
+        656
+      ],
+      "id": "096a8cbd-efae-4c1b-8bdd-eab77960d7e8",
+      "name": "Non-BL or BL request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "25797215-99aa-44b8-b943-67c49e5f8dee",
+              "leftValue": "={{ $json.output.claim_attachment }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "239e58a6-f0ab-40fb-8ef6-67c4fd03bc55",
+              "leftValue": "={{ $('HTTP Request').item.json.attachments }}",
+              "rightValue": "1",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1072,
+        496
+      ],
+      "id": "baded3f1-afae-4b86-8366-f1004677909f",
+      "name": "If3"
     },
     {
       "parameters": {
@@ -434,11 +481,25 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -112,
-        272
+        -832,
+        832
       ],
-      "id": "80a1701d-bbb7-497d-8ebf-6aa6e905868b",
-      "name": "Non-BL1"
+      "id": "934125b2-cb51-4331-a389-768171ef9f20",
+      "name": "I_PROCESSING_ERROR"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const email = $('HTTP Request').item.json;\n\nreturn {\n  json: {\n    email_id: email.email_id,\n    category: null,\n    status: \"NEEDS_REVIEW\",\n    review_reason: \"UNDEFINED_FEILD\",\n    has_defect: false,\n    defect_fields: []\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        432
+      ],
+      "id": "761802a9-6938-427c-a2a3-3c92b6af70de",
+      "name": "UNDEFINED_FEILD"
     }
   ],
   "pinData": {},
@@ -492,7 +553,7 @@
         ],
         [
           {
-            "node": "Non-BL",
+            "node": "Non-BL or BL request",
             "type": "main",
             "index": 0
           }
@@ -532,7 +593,7 @@
         ],
         [
           {
-            "node": "Non-BL1",
+            "node": "I_PROCESSING_ERROR",
             "type": "main",
             "index": 0
           }
@@ -561,7 +622,7 @@
         ],
         [
           {
-            "node": "missing attachment",
+            "node": "If3",
             "type": "main",
             "index": 0
           }
@@ -573,6 +634,13 @@
         [
           {
             "node": "SI vs BL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "UNDEFINED_FEILD",
             "type": "main",
             "index": 0
           }
@@ -689,7 +757,7 @@
         ]
       ]
     },
-    "Non-BL": {
+    "Non-BL or BL request": {
       "main": [
         [
           {
@@ -700,13 +768,42 @@
         ]
       ]
     },
-    "Non-BL1": {
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "missing attachment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Non-BL or BL request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "I_PROCESSING_ERROR": {
       "main": [
         [
           {
             "node": "Merge",
             "type": "main",
             "index": 3
+          }
+        ]
+      ]
+    },
+    "UNDEFINED_FEILD": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 4
           }
         ]
       ]
@@ -717,7 +814,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "ae9262ce-34f6-461b-84ff-599f7d8b2f73",
+  "versionId": "7390d8d5-6799-46ff-b34f-d00c37c22698",
   "meta": {
     "instanceId": "dcfa4e604c43538d805cee61a25d4d89fe7c0b4bb6141e5b3f1f2868fc73b735"
   },
