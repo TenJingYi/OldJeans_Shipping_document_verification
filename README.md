@@ -32,6 +32,9 @@ https://oldjeans-shipping-document-verification.onrender.com/
 **Presentation Slides:**  
 https://canva.link/nvzrwdcn5aa39j1
 
+**Video Demo:**  
+https://drive.google.com/drive/folders/1Nd1AKirPeL4u-MlS5ZyDcm-BOPnJC8gi?usp=sharing
+
 
 ------------------------------------------------------------------------
 
