@@ -18,11 +18,16 @@ https://xintong16.github.io/sdoc-review-demo/
 
 The Review Desk demonstrates how OldJeans presents AI verification results to human reviewers, including `OK`, `MISMATCH`, and `NEEDS_REVIEW` cases.
 
+**Cloud Deployment:**  
+https://tenjingyi06.app.n8n.cloud/
+
+The AI verification workflow is deployed on **n8n Cloud**, with workflow
+orchestration and Google Gemini integration running in the cloud. The
+workflow connects to our **Render-hosted Inbox API**, which provides access
+to the 520-email hackathon dataset and its document attachments.
+
 **Cloud Inbox API:**  
 https://oldjeans-shipping-document-verification.onrender.com/
-
-The cloud API provides access to the hackathon email and attachment dataset used by the prototype.
-
 ------------------------------------------------------------------------
 
 ## 🎯 Problem
