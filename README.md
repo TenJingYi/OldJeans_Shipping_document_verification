@@ -391,15 +391,6 @@ The pipeline processes:
 
 ------------------------------------------------------------------------
 
-## Security
-
-- The Google Gemini API key is stored as an n8n credential.
-- No API keys or secrets are embedded in the HITL review page, the architecture diagram, or any file shared
-outside the team.
-
-------------------------------------------------------------------------
-
-
 ## 🧩 Key Technical Challenges
 
 ### Multi-format processing
@@ -518,8 +509,8 @@ between Shipping Instructions and Bills of Lading.
 
 ## 🔐 Security
 
-No API keys or private credentials are stored in this repository. Users
-deploying the project must configure their own credentials through n8n's
+- No API keys or private credentials are stored in this repository.
+- Users deploying the project must configure their own credentials through n8n's
 credential management system.
 
 ------------------------------------------------------------------------
