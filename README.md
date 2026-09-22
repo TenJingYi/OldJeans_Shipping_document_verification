@@ -29,6 +29,9 @@ to the 520-email hackathon dataset and its document attachments.
 **Cloud Inbox API:**  
 https://oldjeans-shipping-document-verification.onrender.com/
 
+**Presentation Slides:**  
+
+
 ------------------------------------------------------------------------
 
 ## 🎯 Problem
@@ -229,6 +232,8 @@ Possible outputs include:
 -   `NEEDS_REVIEW` --- reliable automatic verification cannot be
     completed
 
+Every mismatch, missing-attachment, or unreadable-document case is routed to a human reviewer before any corrective action is taken, thus AI never auto-sends a correction on its own.
+
 ------------------------------------------------------------------------
 
 ## ⚙️ Technology Stack
@@ -365,6 +370,34 @@ OldJeans includes error paths and review states so individual failures
 do not terminate the entire workflow.
 
 ------------------------------------------------------------------------
+
+## What data the pipeline touches
+
+The pipeline processes:
+
+- Shipping Instruction (SI) and Bill of Lading (BL) documents attached to inbound emails
+- Shipping details such as shipper/consignee company names, ports, container counts and weights
+- Email metadata including sender, subject and body, used only to classify intent and route the correct handling branch
+- No payment details, ID numbers, or health/personal data are processed anywhere in the pipeline.
+
+------------------------------------------------------------------------
+
+## Where data lives
+
+- All processing happens inside the n8n workflow, orchestrated in a local/self-hosted environment except to the Gemini API for extraction.
+- Extracted structured fields (shipper, consignee, ports, weights, etc.) are held in-memory during the workflow run and written only to the final submission JSON. 
+- The HITL review UI reads only the submission output; any reviewer decisions (approve/flag) are stored locally in the reviewer's own browser (localStorage), not sent to a shared server.
+
+------------------------------------------------------------------------
+
+## Security
+
+- The Google Gemini API key is stored as an n8n credential.
+- No API keys or secrets are embedded in the HITL review page, the architecture diagram, or any file shared
+outside the team.
+
+------------------------------------------------------------------------
+
 
 ## 🧩 Key Technical Challenges
 
