@@ -30,6 +30,7 @@ to the 520-email hackathon dataset and its document attachments.
 https://oldjeans-shipping-document-verification.onrender.com/
 
 **Presentation Slides:**  
+https://canva.link/nvzrwdcn5aa39j1
 
 
 ------------------------------------------------------------------------
